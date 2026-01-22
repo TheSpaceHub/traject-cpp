@@ -3,8 +3,6 @@
 #include <vector>
 #include "../linalg.h"
 
-#define pi 3.141592653589793238
-
 void testVector3Equality()
 {
     Vector3<int> a;
@@ -82,7 +80,7 @@ void testVector3Scalar()
 
 void testVector3Spherical()
 {
-    Vector3<double> v = Vector3<double>::fromSpherical(1, pi / 4, pi / 4);
+    Vector3<double> v = Vector3<double>::fromSpherical(1, 3.141592653589793238 / 4, 3.141592653589793238 / 4);
     assert(v.like(Vector3<double>(0.5, 0.5, std::sqrt(0.5))));
 
     Vector3<double> v1(1, 4, -0.4);

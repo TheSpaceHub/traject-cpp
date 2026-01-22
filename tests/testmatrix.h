@@ -3,7 +3,7 @@
 #include <vector>
 #include "../linalg.h"
 
-void testEquality()
+void testMatrixEquality()
 {
     Matrix<int> a(2, 2);
     a(0, 0) = 1;
@@ -33,7 +33,7 @@ void testMatrixFromVector()
     std::cout << "  matrix from vector passed" << std::endl;
 }
 
-void testAddition()
+void testMatrixAddition()
 {
     Matrix<int> a({{1, 1}});
     Matrix<int> b({{2, 2}});
@@ -44,7 +44,7 @@ void testAddition()
     std::cout << "  addition passed" << std::endl;
 }
 
-void testSubstraction()
+void testMatrixSubstraction()
 {
     Matrix<int> a({{1, 1}});
     Matrix<int> b({{2, 2}});
@@ -55,7 +55,7 @@ void testSubstraction()
     std::cout << "  substraction passed" << std::endl;
 }
 
-void testMultiplication()
+void testMatrixMultiplication()
 {
     Matrix<int> a({{2, 1},
                    {-1, -3}});
@@ -84,7 +84,18 @@ void testMultiplication()
     std::cout << "  multiplication passed" << std::endl;
 }
 
-void testIdentity()
+void testMatrixScalar()
+{
+    Matrix<int> a({{1, 0},
+                   {0, 1}});
+    Matrix<int> b({{2, 0},
+                   {0, 2}});
+
+    assert(a * 2 == b and 2 * a == b);
+    std::cout << "  scalar passed" << std::endl;
+}
+
+void testMatrixIdentity()
 {
     Matrix<int> a({{1, 0},
                    {0, 1}});
@@ -92,7 +103,7 @@ void testIdentity()
     std::cout << "  identity passed" << std::endl;
 }
 
-void testTranspose()
+void testMatrixTranspose()
 {
     Matrix<int> a({{1, 2, 3},
                    {4, 5, 6}});
@@ -103,7 +114,7 @@ void testTranspose()
     std::cout << "  transpose passed" << std::endl;
 }
 
-void testDeterminant()
+void testMatrixDeterminant()
 {
     Matrix<int> a({{1, 2},
                    {3, 4}});
@@ -113,7 +124,7 @@ void testDeterminant()
     std::cout << "  determinant passed" << std::endl;
 }
 
-void testInverse()
+void testMatrixInverse()
 {
     Matrix<double> a({{1, 2, 3},
                       {3, 4, 5},
@@ -122,7 +133,7 @@ void testInverse()
     std::cout << "  inverse passed" << std::endl;
 }
 
-void testExceptions()
+void testMatrixExceptions()
 {
     Matrix<int> a(2, 2);
     Matrix<int> b(3, 3);
@@ -154,17 +165,31 @@ void testExceptions()
     std::cout << "  exceptions passed" << std::endl;
 }
 
+void testMatrixVectorMultiplication()
+{
+    Matrix<int> m({{2, 0, 0},
+                   {0, 3, 0},
+                   {0, 0, 1}});
+    Vector3<int> v(7, 6, 2);
+    assert(m * v == Vector3<int>(14, 18, 2));
+    std::cout << "  matrix-vector multiplication passed" << std::endl;
+}
+
 void runMatrixTests()
 {
-    testEquality();
+    testMatrixEquality();
     testMatrixFromVector();
     // once we are certain we can create a matrix from a 2d vector we may write matrices using 2d vectors for our tests
-    testAddition();
-    testSubstraction();
-    testMultiplication();
-    testIdentity();
-    testTranspose();
-    testDeterminant();
-    testInverse();
-    testExceptions();
+    testMatrixAddition();
+    testMatrixSubstraction();
+    testMatrixMultiplication();
+    testMatrixScalar();
+    testMatrixIdentity();
+    testMatrixTranspose();
+    testMatrixDeterminant();
+    testMatrixInverse();
+    testMatrixExceptions();
+
+    std::cout << "Running Matrix and Vector3 combined tests" << std::endl;
+    testMatrixVectorMultiplication();
 }

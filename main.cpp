@@ -2,18 +2,24 @@
 #include "renderer.h"
 #include "linalg.h"
 #include <cmath>
+#include <windows.h>
 
 #define pi 3.141592653589793238
 
 int main()
 {
-    int WIDTH = 30;
-    int HEIGHT = 30;
-    Renderer r = Renderer(WIDTH, HEIGHT);
-    std::cout << "test";
+    RenderObject *o = new RenderObject(RenderObject::Circle(30, 30, 10, 0, 7, 1));
+    Renderer renderer(30, 30);
+    for (int k = 0; k < 30; k++)
+    {
+        *o = RenderObject::Circle(30, 30, 10, k, 7, 1);
+        renderer.addObjectToBuffer(o);
+        renderer.render();
+        Sleep(50);
+    }
+    delete o;
 
-    Vector3<double> v = Vector3<double>::fromSpherical(1, pi / 4, pi / 4);
-    std::cout << v << std::endl;
+    
 
     int keepScreenOpen;
     std::cin >> keepScreenOpen;

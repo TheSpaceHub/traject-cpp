@@ -5,7 +5,8 @@
 #include <vector>
 #include <windows.h>
 #include <cmath>
-#include "../renderer.h"
+#include "renderer.h"
+
 
 #define pi 3.141592653589793238
 

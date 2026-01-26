@@ -1,8 +1,8 @@
 #pragma once
 
 #include <functional>
-#include "../rk4.h"
-#include "../linalg.h"
+#include "rk4.h"
+#include "linalg.h"
 
 void testRK4onxist()
 {

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cassert>
 #include <vector>
-#include "../linalg.h"
+#include "linalg.h"
 
 void testVector3Equality()
 {

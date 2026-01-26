@@ -1,8 +1,8 @@
 #include <iostream>
-#include "tests/testmatrix.h"
-#include "tests/testvector3.h"
-#include "tests/testrenderer.h"
-#include "tests/testrk4.h"
+#include "testmatrix.h"
+#include "testvector3.h"
+#include "testrenderer.h"
+#include "testrk4.h"
 
 int main()
 {

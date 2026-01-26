@@ -123,7 +123,7 @@ void testRendererCompatibility()
 void runRendererTests()
 {
     testRendererCompatibility();
-    // displayFadingWhite();
+    displayFadingWhite();
     displayMovingCircle();
     displayLineThroughCircle();
     displayManualCircumference();

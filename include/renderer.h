@@ -163,12 +163,13 @@ public:
             for (int i = std::max(0, (int)std::floor(x - r) - 1); i < std::min(w, (int)std::ceil(x + r) + 1); i++)
             {
                 double d2 = (x - i - 0.5) * (x - i - 0.5) + (y - j - 0.5) * (y - j - 0.5);
+
                 if (3 * d2 <= r * r)
-                    sphere.set(i, j, 1, rndt - std::sqrt(r * r - (x - i - 0.5) * (x - i - 0.5) - (y - j - 0.5) * (y - j - 0.5)));
+                    sphere.set(i, j, 1, rndt - std::sqrt(r * r - d2));
                 else if (r * r >= d2 * 1.25)
-                    sphere.set(i, j, 5, rndt - std::sqrt(r * r - (x - i - 0.5) * (x - i - 0.5) - (y - j - 0.5) * (y - j - 0.5)));
+                    sphere.set(i, j, 5, rndt - std::sqrt(r * r - d2));
                 else if ((r + 0.5) * (r + 0.5) >= d2)
-                    sphere.set(i, j, 2, rndt - std::sqrt(r * r - (x - i - 0.5) * (x - i - 0.5) - (y - j - 0.5) * (y - j - 0.5)));
+                    sphere.set(i, j, 2, rndt - std::sqrt(r * r - d2));
             }
         }
         return sphere;
@@ -244,10 +245,11 @@ public:
             addObjectToData(buffer[i]);
         this->buffer.resize(0);
     }
-    void render()
+    void render(bool clearScreenBeforeRendering = true)
     {
         // load the pixels
-        this->clearScreen();
+        if (clearScreenBeforeRendering)
+            this->clearScreen();
         this->drawObjects();
 
         // reserve

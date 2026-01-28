@@ -34,10 +34,8 @@ Vector3<double> inertialToLocal(double lat, double lon, Vector3<double> v)
     return m * (v - spinningv(lat, lon));
 }
 
-Matrix<double> gravitationalDerivatives(const Matrix<double> &m)
+void gravitationalDerivatives(const Matrix<double> &m, Matrix<double> &derivatives)
 {
-    Matrix<double> derivatives(1, 6);
-
     // for x, y and z they are vx, vy and vz
     derivatives(0, 0) = m(0, 3);
     derivatives(0, 1) = m(0, 4);
@@ -49,8 +47,6 @@ Matrix<double> gravitationalDerivatives(const Matrix<double> &m)
     derivatives(0, 3) = factor * m(0, 0);
     derivatives(0, 4) = factor * m(0, 1);
     derivatives(0, 5) = factor * m(0, 2);
-
-    return derivatives;
 }
 
 bool objectInsideEarth(const Matrix<double> &m)
@@ -71,5 +67,5 @@ RK4Solution getFinalPosition(Vector3<double> initialPos, Vector3<double> initial
     initialConditions(0, 3) = initialV[0];
     initialConditions(0, 4) = initialV[1];
     initialConditions(0, 5) = initialV[2];
-    return solver.solve(initialConditions, gravitationalDerivatives, 100000, objectInsideEarth);
+    return solver.solve(initialConditions, gravitationalDerivatives, RK4Constants::MAX_STEPS, objectInsideEarth);
 }

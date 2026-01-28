@@ -6,10 +6,10 @@
 
 void testRK4onxist()
 {
-    std::function<Matrix<double>(Matrix<double>)> der = [](Matrix<double> m)
-    { Matrix<double> retm(1,1);
+    std::function<void(Matrix<double>, Matrix<double> &)> der = [](Matrix<double> m, Matrix<double> &retm)
+    {
         retm(0, 0) = 1;
-        return retm; };
+    };
     std::function<bool(Matrix<double>)> reachedhalf = [](Matrix<double> m)
     { return m(0, 0) >= 0.5; };
 
@@ -23,11 +23,11 @@ void testRK4onxist()
 
 void testCircularMotion()
 {
-    std::function<Matrix<double>(Matrix<double>)> der = [](Matrix<double> m)
-    { Matrix<double> retm(1,2);
+    std::function<void(Matrix<double>, Matrix<double> &)> der = [](Matrix<double> m, Matrix<double> &retm)
+    {
         retm(0, 0) = -2 * pi * m(0, 1);
         retm(0, 1) = 2 * pi * m(0, 0);
-        return retm; };
+    };
     std::function<bool(Matrix<double>)> reachedhalf = [](Matrix<double> m)
     { return m(0, 0) <= -(1 - 1e-6); };
 

@@ -4,6 +4,7 @@
 #include <vector>
 #include <cmath>
 #include <stdexcept>
+#include "constants.h" // for flags
 
 template <typename T>
 class Vector3
@@ -238,13 +239,16 @@ public:
     // accessing elements (write)
     T &operator()(int y, int x)
     {
-        if (x >= cols)
+        if constexpr (Math::SAFE_MATRICES)
         {
-            throw std::out_of_range("Matrix width exceeded");
-        }
-        if (y >= rows)
-        {
-            throw std::out_of_range("Matrix height exceeded");
+            if (x >= cols)
+            {
+                throw std::out_of_range("Matrix width exceeded");
+            }
+            if (y >= rows)
+            {
+                throw std::out_of_range("Matrix height exceeded");
+            }
         }
         return data[cols * y + x];
     }
@@ -252,13 +256,16 @@ public:
     // accessing elements (read, const)
     T operator()(int y, int x) const
     {
-        if (x >= cols)
+        if constexpr (Math::SAFE_MATRICES)
         {
-            throw std::out_of_range("Matrix width exceeded");
-        }
-        if (y >= rows)
-        {
-            throw std::out_of_range("Matrix height exceeded");
+            if (x >= cols)
+            {
+                throw std::out_of_range("Matrix width exceeded");
+            }
+            if (y >= rows)
+            {
+                throw std::out_of_range("Matrix height exceeded");
+            }
         }
         return data[cols * y + x];
     }
@@ -302,8 +309,11 @@ public:
     // add matrices
     Matrix<T> operator+(const Matrix<T> &m) const
     {
-        if (m.cols != cols or m.rows != rows)
-            throw std::invalid_argument("Matrix dimensions are not compatible");
+        if constexpr (Math::SAFE_MATRICES)
+        {
+            if (m.cols != cols or m.rows != rows)
+                throw std::invalid_argument("Matrix dimensions are not compatible");
+        }
         Matrix<T> result(rows, cols);
 
         for (int j = 0; j < rows; j++)
@@ -316,8 +326,11 @@ public:
     // substract matrices
     Matrix<T> operator-(const Matrix<T> &m) const
     {
-        if (m.cols != cols or m.rows != rows)
-            throw std::invalid_argument("Matrix dimensions are not compatible");
+        if constexpr (Math::SAFE_MATRICES)
+        {
+            if (m.cols != cols or m.rows != rows)
+                throw std::invalid_argument("Matrix dimensions are not compatible");
+        }
         Matrix<T> result(rows, cols);
 
         for (int j = 0; j < rows; j++)
@@ -330,8 +343,11 @@ public:
     // multiply matrices
     Matrix<T> operator*(const Matrix<T> &m) const
     {
-        if (cols != m.rows)
-            throw std::invalid_argument("Matrix dimensions are not compatible");
+        if constexpr (Math::SAFE_MATRICES)
+        {
+            if (cols != m.rows)
+                throw std::invalid_argument("Matrix dimensions are not compatible");
+        }
         Matrix<T> result(rows, m.cols);
 
         for (int i = 0; i < m.cols; i++)

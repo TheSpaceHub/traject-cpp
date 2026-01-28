@@ -1,79 +1,55 @@
 #include <iostream>
+#include <conio.h>
 #include "renderer.h"
-#include "linalg.h"
-#include "rk4.h"
-#include "physics.h"
-#include "constants.h"
-#include <cmath>
-#include <windows.h>
+#include "simulateTrajectory.h"
+#include "solveTrajectory.h"
 
-void ccin(double &d, int retriesLeft = 3)
+void displayTitle()
+{
+    std::cout << "Traject-cpp\n\n";
+    std::cout << "C++ trajectory simulator, solver and visualizer\n\n";
+    std::cout << "1: Simulate a trajectory specifying the parameters\n";
+    std::cout << "2: Find the optimal trajectory given certain parameters\n";
+    std::cout << "Select functionality: ";
+}
+
+void functionalityccin(int &d, int retriesLeft = 3)
 {
     // ccin retries the cin if the user makes a mistake
     try
     {
         std::cin >> d;
+        if (d != 1 and d != 2)
+            throw std::exception();
     }
     catch (...)
     {
-        std::cout << "Check the input and try again.\n";
-        ccin(d, retriesLeft - 1);
+        std::cout << "Check the input and try again.\nSelect functionality: ";
+        functionalityccin(d, retriesLeft - 1);
     }
-}
-
-Vector3<double> getInitialPos()
-{
-    // returns the position in inertial frame
-    double lat, lon;
-    std::cout << "Enter launch coordinates in degrees:" << std::endl;
-    std::cout << "Latitude: ";
-    ccin(lat);
-    std::cout << "Longitude: ";
-    ccin(lon);
-
-    lat = Math::pi / 2 - lat * Math::pi / 180;
-    lon = lon * Math::pi / 180;
-    return Vector3<double>::fromSpherical(Physics::EARTH_RADIUS, lon, lat);
-}
-
-Vector3<double> getInitialV(double radLatitude, double radLongitude)
-{
-    // returns the velocity in inertial frame
-    double v, eastAngle, groundAngle;
-    std::cout << "Enter speed and angle relative to geographical east (counter-clockwise) and relative to ground (both in degrees):" << std::endl;
-    std::cout << "Speed: ";
-    ccin(v);
-    std::cout << "East angle: ";
-    ccin(eastAngle);
-    std::cout << "Ground angle: ";
-    ccin(groundAngle);
-
-    eastAngle *= Math::pi / 180;
-    groundAngle *= Math::pi / 180;
-
-    return localToInertial(radLatitude,
-                           radLongitude,
-                           v * Vector3<double>(cos(groundAngle) * cos(eastAngle),
-                                               cos(groundAngle) * sin(eastAngle),
-                                               sin(groundAngle)));
 }
 
 int main()
 {
 
-    Vector3<double> initialPos = getInitialPos();
-    Vector3<double> initialV = getInitialV(Math::pi / 2 - initialPos.phi(), initialPos.theta());
+    displayTitle();
+    int functionality;
+    functionalityccin(functionality);
 
-    RK4Solution sol = getFinalPosition(initialPos, initialV);
+    switch (functionality)
+    {
+    case 1:
+        simulateTrajectory();
+        break;
+    case 2:
+        solveTrajectory();
+        break;
 
-    std::cout << sol.solutions << std::endl;
-    std::cout << sol.steps << std::endl;
+    default:
+        break;
+    }
 
-    Vector3<double> finalPos(sol.solutions(0, 0), sol.solutions(0, 1), sol.solutions(0, 2));
-    std::cout << "final latitude: " << 90 - 180 / Math::pi * (finalPos.phi()) << std::endl;
-    std::cout << "final longitude: " << 180 / Math::pi * (finalPos.theta() - Physics::EARTH_ANGULAR_VELOCITY * sol.steps * RK4Constants::STEP_SIZE) << std::endl;
-
-    int keepScreenOpen;
-    std::cin >> keepScreenOpen;
+    std::cout << "\nPress any key to end program...";
+    _getch();
     return 0;
 }

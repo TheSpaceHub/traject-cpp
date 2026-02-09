@@ -10,11 +10,29 @@ struct RK4Solution
     double stepSize;
     double error = 0.0;
     Matrix<double> solutions;
+    std::vector<Matrix<double>> snapshots = {};
 
-    RK4Solution(int _steps, double _stepSize, double _error, const Matrix<double> &_solutions) : steps(_steps),
-                                                                                                 stepSize(_stepSize),
-                                                                                                 error(_error),
-                                                                                                 solutions(_solutions)
+    RK4Solution(
+        int _steps,
+        double _stepSize,
+        double _error,
+        const Matrix<double> &_solutions,
+        const std::vector<Matrix<double>> _snapshots) : steps(_steps),
+                                                        stepSize(_stepSize),
+                                                        error(_error),
+                                                        solutions(_solutions),
+                                                        snapshots(_snapshots)
+    {
+    }
+
+    RK4Solution(
+        int _steps,
+        double _stepSize,
+        double _error,
+        const Matrix<double> &_solutions) : steps(_steps),
+                                            stepSize(_stepSize),
+                                            error(_error),
+                                            solutions(_solutions)
     {
     }
 };
@@ -30,13 +48,14 @@ public:
         h = stepSize;
     }
 
-    RK4Solution solve(const Matrix<double> &initialConditions, const std::function<void(const Matrix<double> &, Matrix<double> &)> &derivatives, int maxSteps, const std::function<bool(Matrix<double>)> &endCondition)
+    RK4Solution solve(const Matrix<double> &initialConditions, const std::function<void(const Matrix<double> &, Matrix<double> &)> &derivatives, int maxSteps, const std::function<bool(Matrix<double>)> &endCondition, int snapshotFrequency = -1)
     {
         // the solver assumes the derivatives do NOT depend on time explicitly
         // input: Matrix (row vector) with initial conditions, Matrix->Matrix (out-parameter), max steps, Matrix->bool to check if we should stop
         Matrix<double> y(initialConditions);
         int n = initialConditions.getCols();
         Matrix<double> k1(1, n), k2(1, n), k3(1, n), k4(1, n);
+        std::vector<Matrix<double>> snapshots = {};
         int step = 0;
         while (step < maxSteps)
         {
@@ -46,12 +65,14 @@ public:
             derivatives(y + h * k3, k4);
 
             y = y + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4);
+            if (snapshotFrequency > 0 && step % snapshotFrequency == 0)
+                snapshots.push_back(y);
 
             if (endCondition(y))
                 break;
             step++;
         }
 
-        return RK4Solution(step, h, 0.0, y);
+        return RK4Solution(step, h, 0.0, y, snapshots);
     }
 };

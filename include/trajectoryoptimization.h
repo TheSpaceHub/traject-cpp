@@ -16,30 +16,6 @@ struct vAngle
     vAngle(double _v, double _e) : v(_v), eastAngle(_e) {};
 };
 
-Matrix<double> simulate(vAngle input, double groundAngle, const Vector3<double> &initialPos, Vector3<double> &inertialV, RK4Solution &sol, Vector3<double> &finalPos, Matrix<double> &m)
-{
-    // Given v(km/s), eastAngle (deg * norm), groundAngle (deg) and initialPosition, returns latitude and longitude in a matrix
-    // Function needed for energy optimization
-
-    double radLatitude = (Math::pi / 2 - initialPos.phi());
-    double radLongitude = initialPos.theta();
-
-    input.eastAngle *= Math::pi / 180 / Physics::NORM_DEG;
-    groundAngle *= Math::pi / 180;
-
-    inertialV =
-        localToInertial(radLatitude,
-                        radLongitude,
-                        input.v / Physics::NORM_VEL * Vector3<double>(cos(groundAngle) * cos(input.eastAngle), cos(groundAngle) * sin(input.eastAngle), sin(groundAngle)));
-
-    sol = getFinalPosition(initialPos, inertialV);
-    finalPos = Vector3(sol.solutions(0, 0), sol.solutions(0, 1), sol.solutions(0, 2));
-
-    m(0, 0) = (Math::pi / 2 - finalPos.phi());
-    m(1, 0) = (finalPos.theta() - Physics::EARTH_ANGULAR_VELOCITY * sol.steps * RK4Constants::STEP_SIZE);
-    return m;
-}
-
 vAngle getInputs(double groundAngle, const Vector3<double> &initialPos, const Vector3<double> &finalPos)
 {
 
@@ -63,10 +39,9 @@ vAngle getInputs(double groundAngle, const Vector3<double> &initialPos, const Ve
     double dlon = lon2 - lon1;
     double initialAngle = std::fmod(-180 / Math::pi * atan2(sin(dlon) * cos(lat2), cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dlon)) + 450, 360);
 
-    // std::cout << "INITIAL ANGLE " << initialAngle << std::endl;
-    vAngle x(1000.0 * Physics::NORM_VEL, initialAngle * Physics::NORM_DEG);
+    vAngle x(Physics::INITIAL_VELOCITY_GUESS * Physics::NORM_VEL, initialAngle * Physics::NORM_DEG);
 
-    Matrix<double> y = simulate(x, groundAngle, initialPos, inertialV, sol, finalSimulatedPos, m);
+    Matrix<double> y = simulate(x.v, x.eastAngle, groundAngle, initialPos, inertialV, sol, finalSimulatedPos, m);
     Matrix<double> goal(2, 1);
     goal(0, 0) = (Math::pi / 2 - finalPos.phi());
     goal(1, 0) = finalPos.theta();
@@ -75,12 +50,17 @@ vAngle getInputs(double groundAngle, const Vector3<double> &initialPos, const Ve
 
     while (((y - goal).transpose() * (y - goal))(0, 0) > Physics::LOCATION_TOLERANCE)
     {
-        // simulate again
-        y = simulate(x, groundAngle, initialPos, inertialV, sol, finalSimulatedPos, m);
 
         // get new guess by assuming linear function
-        dv = simulate(vAngle(x.v + Math::eps, x.eastAngle), groundAngle, initialPos, inertialV, sol, finalSimulatedPos, m) - y;
-        deA = simulate(vAngle(x.v, x.eastAngle + Math::eps), groundAngle, initialPos, inertialV, sol, finalSimulatedPos, m) - y;
+        dv = simulate(x.v + Math::eps, x.eastAngle, groundAngle, initialPos, inertialV, sol, finalSimulatedPos, m);
+        deA = simulate(x.v, x.eastAngle + Math::eps, groundAngle, initialPos, inertialV, sol, finalSimulatedPos, m);
+
+        // simulate (we do this after calculating differentials to have sol in memory to avoid recalculating for visualization)
+        y = simulate(x.v, x.eastAngle, groundAngle, initialPos, inertialV, sol, finalSimulatedPos, m);
+
+        // substract y
+        dv = dv - y;
+        deA = deA - y;
         J(0, 0) = dv(0, 0);
         J(1, 0) = dv(1, 0);
         J(0, 1) = deA(0, 0);
@@ -96,7 +76,7 @@ vAngle getInputs(double groundAngle, const Vector3<double> &initialPos, const Ve
             std::cout << "Ground angle: " << groundAngle << std::endl
                       << std::endl;
             // hopefully just a bad initial guess so we modify it
-            x.eastAngle = std::fmod(x.eastAngle + 330.0 * Physics::NORM_DEG, 360 * Physics::NORM_DEG);
+            x.eastAngle = std::fmod(x.eastAngle + 30.0 * Physics::NORM_DEG, 360 * Physics::NORM_DEG);
 
             nonInvertibleJacobianCount++;
             if (nonInvertibleJacobianCount > 3)
@@ -115,42 +95,41 @@ vAngle getInputs(double groundAngle, const Vector3<double> &initialPos, const Ve
         x.v += delta(0, 0) * convCoeff;
         x.eastAngle += delta(1, 0) * convCoeff * convCoeff;
 
+        // stores any warning the user needs to know about
+        std::string warningString = "";
+
         // handle orbital speed
         if (x.v > 7909 * Physics::NORM_VEL)
-            std::cout << "Warning: orbital speeds reached\n";
+            warningString += "Warning: orbital speeds reached\n";
         // handle negative speed
         if (x.v < 0)
         {
             // trust that our program will not crash
-            std::cout << "Warning: negative speeds reached\n";
+            warningString += "Warning: negative speeds reached\n";
             x.v *= -1;
             x.eastAngle += 180 * Physics::NORM_DEG;
         }
         // handle angle wrapping
         x.eastAngle = std::fmod(x.eastAngle, 360 * Physics::NORM_DEG);
 
-        /*std::cout << std::endl
-                  << "Goal is \n"
-                  << goal;
-        std::cout
-            << "Guess is \n"
-            << y;
-        std::cout << "Jacobian is \n"
-                  << J; */
-        std::cout << "  Current error: " << std::sqrt(((y - goal).transpose() * (y - goal))(0, 0)) * Physics::EARTH_RADIUS << "m       time: " << sol.steps * RK4Constants::STEP_SIZE << "s" << std::endl;
-        /*std::cout << "New guess is " << x.v / Physics::NORM_VEL << ", " << x.eastAngle / Physics::NORM_DEG << std::endl
-                  << std::endl; */
+        // draw trajectory and display information
+        Renderer renderer(Graphics::WIDTH, Graphics::HEIGHT);
+        RenderObject trajectory = getVisualTrajectory(sol, initialPos);
+        renderer.addObjectToBuffer(&trajectory);
+        renderer.render();
+        std::cout << "  Current error: " << std::sqrt(((y - goal).transpose() * (y - goal))(0, 0)) * Physics::EARTH_RADIUS << "m       time: " << sol.steps * RK4Constants::STEP_SIZE << "s" << "       speed: " << x.v / Physics::NORM_VEL << "m/s" << std::endl;
+        std::cout << warningString;
     }
     x.v /= Physics::NORM_VEL;
     x.eastAngle /= Physics::NORM_DEG;
-    std::cout << "Speed is " << x.v << std::endl;
     return x;
 }
 
 Vector3<double> optimizeTrajectory(Vector3<double> initialPos, Vector3<double> finalPos, double m)
 {
     // given positions, returns best velocity
-    // slightly cheating by using Vector3 to store coords
+
+    // slightly cheating by using Vector3 to store non-cartesian coords
     std::vector<double> bestAngles = {}; // ground angles
     std::vector<vAngle> inputs = {};     // will store the velocities and eastAngles
     std::vector<double> energies = {};
@@ -164,8 +143,8 @@ Vector3<double> optimizeTrajectory(Vector3<double> initialPos, Vector3<double> f
     inputs.push_back(getInputs(45, initialPos, finalPos));
     energies.push_back(m * inputs[1].v * inputs[1].v / 2);
 
-    bestAngles.push_back(65);
-    inputs.push_back(getInputs(65, initialPos, finalPos));
+    bestAngles.push_back(55);
+    inputs.push_back(getInputs(55, initialPos, finalPos));
     energies.push_back(m * inputs[2].v * inputs[2].v / 2);
 
     // we will iterate through the minimums of the parabolas formed by our 3 best guesses until we sort of converge

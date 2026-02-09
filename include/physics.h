@@ -4,6 +4,7 @@
 #include "linalg.h"
 #include "rk4.h"
 #include "constants.h"
+#include "renderer.h"
 
 Vector3<double> spinningv(double lat, double lon)
 {
@@ -67,5 +68,66 @@ RK4Solution getFinalPosition(Vector3<double> initialPos, Vector3<double> initial
     initialConditions(0, 3) = initialV[0];
     initialConditions(0, 4) = initialV[1];
     initialConditions(0, 5) = initialV[2];
-    return solver.solve(initialConditions, gravitationalDerivatives, RK4Constants::MAX_STEPS, objectInsideEarth);
+    return solver.solve(initialConditions, gravitationalDerivatives, RK4Constants::MAX_STEPS, objectInsideEarth, RK4Constants::SNAPSHOT_FREQUENCY);
+}
+
+Matrix<double> simulate(double v, double eastAngle, double groundAngle, const Vector3<double> &initialPos, Vector3<double> &inertialV, RK4Solution &sol, Vector3<double> &finalPos, Matrix<double> &m)
+{
+    // Given v(km/s), eastAngle (deg * norm), groundAngle (deg) and initialPosition, returns latitude and longitude in a matrix
+    // Function needed for energy optimization
+
+    double radLatitude = (Math::pi / 2 - initialPos.phi());
+    double radLongitude = initialPos.theta();
+
+    eastAngle *= Math::pi / 180 / Physics::NORM_DEG;
+    groundAngle *= Math::pi / 180;
+
+    inertialV =
+        localToInertial(radLatitude,
+                        radLongitude,
+                        v / Physics::NORM_VEL * Vector3<double>(cos(groundAngle) * cos(eastAngle), cos(groundAngle) * sin(eastAngle), sin(groundAngle)));
+
+    sol = getFinalPosition(initialPos, inertialV);
+
+    finalPos = Vector3(sol.solutions(0, 0), sol.solutions(0, 1), sol.solutions(0, 2));
+
+    m(0, 0) = (Math::pi / 2 - finalPos.phi());
+    m(1, 0) = (finalPos.theta() - Physics::EARTH_ANGULAR_VELOCITY * sol.steps * RK4Constants::STEP_SIZE);
+    return m;
+}
+
+RenderObject getVisualTrajectory(RK4Solution &sol, const Vector3<double> &initialPos)
+{
+    // get the snapshots
+    std::vector<Matrix<double>> snapshots = sol.snapshots;
+
+    // create the render objects
+    // we will consider orthographic projection
+    std::vector<double> x(snapshots.size()), y(snapshots.size()), rndt(snapshots.size()); // data for the multiline
+    double xOffset = Graphics::WIDTH / 2;
+    double yOffset = Graphics::HEIGHT / 2;
+
+    double midLon = initialPos.theta();
+    midLon += Math::pi / 2;
+
+    for (int i = 0; i < snapshots.size(); i++)
+    {
+        // switch reference frame
+        double newX = snapshots[i](0, 0) * cos(midLon) + snapshots[i](0, 1) * sin(midLon);
+        double newY = snapshots[i](0, 0) * sin(midLon) - snapshots[i](0, 1) * cos(midLon);
+
+        x[i] = newX / Graphics::metersPerPixel + xOffset;
+        y[i] = -snapshots[i](0, 2) / Graphics::metersPerPixel + yOffset;
+        rndt[i] = (newY + Graphics::distanceToEarthCenter) / Graphics::metersPerPixel;
+    }
+    RenderObject earthRender =
+        RenderObject::Sphere(Graphics::WIDTH,
+                             Graphics::HEIGHT,
+                             xOffset,
+                             yOffset,
+                             Physics::EARTH_RADIUS / Graphics::metersPerPixel,
+                             100000 + (Graphics::distanceToEarthCenter + Physics::EARTH_RADIUS) / Graphics::metersPerPixel);
+    RenderObject trajectory = RenderObject::Multiline(Graphics::WIDTH, Graphics::HEIGHT, x, y, rndt);
+    trajectory.merge(&earthRender);
+    return trajectory;
 }

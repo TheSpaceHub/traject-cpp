@@ -87,7 +87,7 @@ public:
         return w == width and h == height;
     }
 
-    // merges passed object to called object. Does not modify the first one but it does the second one
+    // merges passed object to called object. Does not modify passed but does modify called
     void merge(RenderObject *o)
     {
         for (int y = 0; y < height; y++)
@@ -141,7 +141,7 @@ public:
     {
         // does exactly what it says
         if (x.size() != y.size() or y.size() != rndt.size())
-            throw std::invalid_argument("Point and rendist data does not match");
+            throw std::invalid_argument("Point and rendist data do not match");
 
         RenderObject o(w, h);
         for (size_t i = 1; i < x.size(); i++)
@@ -151,7 +151,7 @@ public:
 
     static RenderObject Sphere(int w, int h, double x, double y, double r, double rndt)
     {
-        // creates a sphere for a renderer of size wxh with center(x, y), radius r and radius rendist rndt
+        // creates a sphere for a renderer of size wxh with center(x, y), radius r and center rendist rndt
         // x € [0, w], y € [0, h]
         // we treat a pixel's location as its midpoint
         RenderObject sphere(w, h);
@@ -191,10 +191,10 @@ private:
     {
         if (d == 5) // 75% solid
             stringBuffer += "xx";
-        else if (d == 4) // half line
-            stringBuffer += "..";
+        else if (d == 4) // half line  Red Text
+            stringBuffer += "\033[31m..\033[0m";
         else if (d == 3) // line
-            stringBuffer += "**";
+            stringBuffer += "\033[31m**\033[0m";
         else if (d == 2) // half solid
             stringBuffer += "::";
         else if (d == 1) // solid

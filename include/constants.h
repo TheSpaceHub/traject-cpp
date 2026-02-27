@@ -30,6 +30,7 @@ namespace Physics
     const double EARTH_RADIUS = 6371000;
     const double EARTH_ANGULAR_VELOCITY = 7.29e-5;
     const double G = 6.674e-11;
+    const double g = G * EARTH_MASS / EARTH_RADIUS / EARTH_RADIUS;
     const double ENERGY_TOLERANCE = 0.1;
     const double LOCATION_TOLERANCE = 1e-12;    // in squared degrees
     const double INITIAL_VELOCITY_GUESS = 7000; // m/s

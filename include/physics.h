@@ -96,6 +96,14 @@ Matrix<double> simulate(double v, double eastAngle, double groundAngle, const Ve
     return m;
 }
 
+double getInitialSpeedGuess(const Vector3<double> &initialPos, const Vector3<double> &finalPos, const double angleDegrees)
+{
+    double angleRad = angleDegrees * Math::pi / 180;
+    double theta = acos(initialPos * finalPos / Physics::EARTH_RADIUS / Physics::EARTH_RADIUS);
+    double d = (cos(angleRad) * cos(angleRad)) + (sin(angleRad) * cos(angleRad) / tan(theta / 2));
+    return sqrt((Physics::g * Physics::EARTH_RADIUS) / d);
+}
+
 RenderObject getVisualTrajectory(RK4Solution &sol, const Vector3<double> &initialPos)
 {
     // get the snapshots

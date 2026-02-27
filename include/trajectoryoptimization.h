@@ -39,8 +39,9 @@ vAngle getInputs(double groundAngle, const Vector3<double> &initialPos, const Ve
     double dlon = lon2 - lon1;
     double initialAngle = std::fmod(-180 / Math::pi * atan2(sin(dlon) * cos(lat2), cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dlon)) + 450, 360);
 
-    vAngle x(Physics::INITIAL_VELOCITY_GUESS * Physics::NORM_VEL, initialAngle * Physics::NORM_DEG);
+    vAngle x(getInitialSpeedGuess(initialPos, finalPos, groundAngle) * Physics::NORM_VEL, initialAngle * Physics::NORM_DEG);
 
+    bool isInitialY = true;
     Matrix<double> y = simulate(x.v, x.eastAngle, groundAngle, initialPos, inertialV, sol, finalSimulatedPos, m);
     Matrix<double> goal(2, 1);
     goal(0, 0) = (Math::pi / 2 - finalPos.phi());
@@ -56,8 +57,9 @@ vAngle getInputs(double groundAngle, const Vector3<double> &initialPos, const Ve
         deA = simulate(x.v, x.eastAngle + Math::eps, groundAngle, initialPos, inertialV, sol, finalSimulatedPos, m);
 
         // simulate (we do this after calculating differentials to have sol in memory to avoid recalculating for visualization)
-        y = simulate(x.v, x.eastAngle, groundAngle, initialPos, inertialV, sol, finalSimulatedPos, m);
-
+        if (!isInitialY)
+            y = simulate(x.v, x.eastAngle, groundAngle, initialPos, inertialV, sol, finalSimulatedPos, m);
+        isInitialY = false;
         // substract y
         dv = dv - y;
         deA = deA - y;

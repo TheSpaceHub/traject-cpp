@@ -1,5 +1,4 @@
 #include <iostream>
-#include <conio.h>
 #include "renderer.h"
 #include "simulateTrajectory.h"
 #include "solveTrajectory.h"
@@ -49,7 +48,5 @@ int main()
         break;
     }
 
-    std::cout << "\nPress any key to end program...";
-    _getch();
     return 0;
 }
